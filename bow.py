@@ -2,8 +2,11 @@
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn import svm
 
 class BOW:
+	sift = cv2.SIFT()
+	
 	def __init__(self, mypaths, mylabels, myN=200):
 		"""
 		paths: a list of image paths
@@ -15,24 +18,28 @@ class BOW:
 		self.gridSpacing = 8
 		self.labels = mylabels
 
-	def raw_feature(self):
-		sift = cv2.SIFT()
-		for path in self.paths:
-			im = cv2.imread(path)
-			if (im==None):
-				print path
-				raise Exception, "Invalid image path %s" %path
+		self.raw_features()
+		self.codebook()
 
-			(M, N) = im.shape[:2]
+	def raw_feature_extract(self, path):
+		im = cv2.imread(path)
+		if (im==None):
+			raise Exception, "Invalid image path %s" %path
+
+		(M, N) = im.shape[:2]
+		# Grid sampling
+		pointlist=[]
+		for i in range(1,M, self.patchSize):
+			for j in range(1, N, self.patchSize):
+				pointlist.append(cv2.KeyPoint(i,j,1))
+
+		kps, des = self.sift.compute(im, pointlist)
+		return des
 			
-			# Grid sampling
-			raw_feature=np.zeros((1,128))
-			pointlist=[]
-			for i in range(1,M, self.patchSize):
-				for j in range(1, N, self.patchSize):
-					pointlist.append(cv2.KeyPoint(i,j,1))
-
-			kps, des = sift.compute(im, pointlist)
+	def raw_features(self):
+		raw_feature=np.zeros((1,128))
+		for path in self.paths:
+			des = self.raw_feature_extract(path)
 			raw_feature=np.append(raw_feature,des,axis=0)
 
 		raw_feature = np.delete(raw_feature, (0), axis=0)
@@ -51,63 +58,29 @@ class BOW:
 		np.savetxt("codebook_kmeans.csv", self.codebook, fmt='%.3f', delimiter=',')
 
 	
-	def feature(self):
-		sift=cv2.SIFT()
-		kp, des=sift.detectAndCompute(im, mask)
+	def feature(self, path):
+		des = self.raw_feature_extract(path)
+		labels = self.est.predict(des)
+		h, edge = np.histogram(labels,bins=np.array(range(self.codebook.shape[0]+1))-0.5,density=True)
+		return np.asarray([h])
 
-		if len(kp):
-			labels=self.est.predict(des)
-			h, edge = np.histogram(labels,bins=np.array(range(self.codebook.shape[0]+1))-0.5,density=True)
-			return np.asarray([h])
+	def train(self):
+		X = np.zeros((1,self.N_codebook))
+		for path in self.paths:
+			des = self.feature(path)
+			X = np.append(X, des, axis=0)
+		X = np.delete(X, (0), axis=0)
 
-	def train():
+		clf = svm.SVC()
+		clf.fit(X, self.labels)
+		self.clf=clf
 
-		# try:
-		# 	print "Loading saved codebook"
-		# 	self.est=pickle.load(open("codebook.p","rb"))
-		# 	self.codebook=self.est.cluster_centers_
-		# 	self.N_codebook=self.codebook.shape[0]
-		# 	print "Codebook shape: "+str(self.codebook.shape)
-
-		# except IOError:
-		# 	print "There is no saved codebook"
-		# 	position=[None]
-		# 	feature=np.zeros((1,128))
-		# 	image_index=[None]
-
-		# 	sift=cv2.SIFT()
-
-		# 	for path in paths:
-		# 		im=cv2.imread(path)
-		# 		kp, des=sift.detectAndCompute(im, None)
-				
-		# 		feature=np.append(feature,des,axis=0)
-		# 		position=position+kp
-
-		# 	print "====== Building codebook for BoW =========="
-		# 	print "Feature shape: "+str(feature.shape)
-			
-		# 	# Perform kmean clustering
-		# 	est=KMeans(init='k-means++', n_clusters=N)
-		# 	est.fit(feature)
-
-		# 	self.N_codebook=N
-		# 	self.est=est
-		# 	self.codebook=est.cluster_centers_
-		# 	print "Codebook shape: "+str(self.codebook.shape)
-		# 	pickle.dump(self.est,open("codebook.p","wb"))
-
-class BOW_kmeans(BOW):
-	def codebook(self):
-		raw_feature = np.genfromtxt("raw_feature.csv", delimiter=',')
-
-		est=KMeans(init='k-means++', n_clusters=self.N_codebook)
-		est.fit(raw_feature)
-
-		self.est=est
-		self.codebook=est.cluster_centers_
-		print "Codebook shape: "+str(self.codebook.shape)
-		np.savetxt("codebook_kmeans.csv", self.codebook, fmt='%.3f', delimiter=',')
+	def test(self, testpath):
+		prediction=[]
+		for path in testpath:
+			des = self.feature(path)
+			prediction.append(self.clf.predict(des)[0])
 		
+		return prediction
 
 

@@ -7,16 +7,15 @@ from sklearn import svm
 class BOW:
 	sift = cv2.SIFT()
 	
-	def __init__(self, mypaths, mylabels, myN=200):
+	def __init__(self, mypaths, myN=200):
 		"""
 		paths: a list of image paths
 		N: number of codebook clusters, default to be 100
 		"""
 		self.paths = mypaths
 		self.N_codebook = myN
-		self.patchSize = 16
+		self.patchSize = 32
 		self.gridSpacing = 8
-		self.labels = mylabels
 
 		self.raw_features()
 		self.codebook()
@@ -63,24 +62,4 @@ class BOW:
 		labels = self.est.predict(des)
 		h, edge = np.histogram(labels,bins=np.array(range(self.codebook.shape[0]+1))-0.5,density=True)
 		return np.asarray([h])
-
-	def train(self):
-		X = np.zeros((1,self.N_codebook))
-		for path in self.paths:
-			des = self.feature(path)
-			X = np.append(X, des, axis=0)
-		X = np.delete(X, (0), axis=0)
-
-		clf = svm.SVC()
-		clf.fit(X, self.labels)
-		self.clf=clf
-
-	def test(self, testpath):
-		prediction=[]
-		for path in testpath:
-			des = self.feature(path)
-			prediction.append(self.clf.predict(des)[0])
-		
-		return prediction
-
 

@@ -22,7 +22,7 @@ def getpaths(root):
 		for f in os.listdir(os.path.join(root, categories[i])):
 			if f.endswith(".jpg") or f.endswith(".png") or f.endswith(".tiff"):
 				count +=1
-				paths.append(os.path.abspath(f))
+				paths.append(os.path.join(root, categories[i], f))
 				labels.append(i)
 		print "     %d images in category \"%s\"" % (count, categories[i])
 

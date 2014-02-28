@@ -37,35 +37,52 @@ class BOW:
 		return des
 			
 	def raw_features(self):
-		raw_feature=np.zeros((1,128))
+		raw_features = np.zeros((1,128))
 		for path in self.paths:
 			des = self.raw_feature_extract(path)
-			raw_feature=np.append(raw_feature,des,axis=0)
+			raw_features = np.append(raw_features,des,axis=0)
 
-		raw_feature = np.delete(raw_feature, (0), axis=0)
-		print "Raw feature shape: "+str(raw_feature.shape)
-		np.savetxt("raw_feature.csv", raw_feature, fmt='%.4f', delimiter=',')
+		raw_features = np.delete(raw_features, (0), axis=0)
+		self.raw_features = raw_features
+		print "Raw feature shape: "+str(raw_features.shape)
+		# np.savetxt("raw_feature.csv", raw_feature, fmt='%.4f', delimiter=',')
 
 	def codebook(self):
-		raw_feature = np.genfromtxt("raw_feature.csv", delimiter=',')
+		print "Forming codebook through kmean clustering"
+		# raw_feature = np.genfromtxt("raw_feature.csv", delimiter=',')
 
 		est=KMeans(init='k-means++', n_clusters=self.N_codebook)
-		est.fit(raw_feature)
+		est.fit(self.raw_features)
 
 		self.est=est
 		self.codebook=est.cluster_centers_
 		print "Codebook shape: "+str(self.codebook.shape)
-		np.savetxt("codebook_kmeans.csv", self.codebook, fmt='%.3f', delimiter=',')
-
+		# np.savetxt("codebook_kmeans.csv", self.codebook, fmt='%.3f', delimiter=',')
 	
-	def feature(self, path):
+	def bow_feature_extract(self, path):
+		"""
+		BoW feature for a single image
+		Simply a histogram, in the new representation
+		"""
 		des = self.raw_feature_extract(path)
 		labels = self.est.predict(des)
 		h, edge = np.histogram(labels,bins=np.array(range(self.codebook.shape[0]+1))-0.5,density=True)
 		return np.asarray([h])
 
+	def feature(self, paths):
+		"""
+		path is numpy array
+		"""
+		out = np.zeros((1,self.N_codebook))
+		for path in paths:
+			# BoW feature is histogram of raw feature in codebook representation		
+			des = self.bow_feature_extract(path)
+			out = np.append(out, des, axis=0)
+		
+		out = np.delete(out, (0), axis=0)
+		return out
 
-class BOW_spatialpyramid(BOW):
+class BOW_sparsecoding(BOW):
 	def codebook(self):
 		raw_feature = np.genfromtxt("raw_feature.csv", delimiter=',')
 		mdbl =  MiniBatchDictionaryLearning(self.N_codebook)

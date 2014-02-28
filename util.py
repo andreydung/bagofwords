@@ -2,48 +2,42 @@ import os
 import numpy as np
 
 # Get labels from subdirectories
-def getpaths(folder):
-	categories = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder,name))]
+def getpaths(root):
+	"""
+	Each category in one sub folder
+	"""
+	categories = os.listdir(root)
+	for folder in categories:
+		if not os.path.isdir(os.path.join(root, folder)):
+			raise Exception("Invalid database. One folder for each category")
+	
 	print "Categories:"
 	print categories
 
-	cat_dict=dict()
-	for i in range(len(categories)):
-		cat_dict[categories[i]]=i
-
 	paths = []
 	labels = []
-	for path, subdirs, files in os.walk(folder):
-		for name in files:
-			paths.append(os.path.join(path, name))
-			labels.append(cat_dict[os.path.split(path)[-1]])
+
+	for i in range(len(categories)):
+		count = 0
+		for f in os.listdir(os.path.join(root, categories[i])):
+			if f.endswith(".jpg") or f.endswith(".png") or f.endswith(".tiff"):
+				count +=1
+				paths.append(os.path.abspath(f))
+				labels.append(i)
+		print "     %d images in category \"%s\"" % (count, categories[i])
 
 	labels=np.array(labels)
-	print "There are totally %s images" % len(path)
+	print "Total %s images" % len(paths)
+	
 	return paths, labels, categories
 
 
-# paths_train, paths_test, y_train, y_test = cross_validation.train_test_split(paths, labels,\
-# 														 test_size=0.3, random_state=0)
 
-# paths_train=paths_train.tolist()
-# paths_test=paths_test.tolist()
-# y_train=y_train.tolist()
-# y_test=y_test.tolist()
+if __name__ =="__main__":
+	folder = '/media/sda5/Projects/Semantic/Database/Stanford/scene15_short'
+	(paths, labels, categories) = getpaths(folder)
 
-# b = BOW(paths_train, y_train, 100)
-# b.train()
+	thefile = open('scene15_short.txt','w')
 
-
-# prediction = b.test(paths_test)
-# true = np.array(y_test)
-
-# print prediction
-# print true
-
-# print sum(prediction!=true)
-
-
-
-
-# c = BOW_classifier('codebook_kmeans.csv', 'raw_feature.csv')
+	for path in paths:
+		thefile.write("%s\n" % path)

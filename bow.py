@@ -2,7 +2,8 @@
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
-from sklearn import svm
+from sklearn.decomposition import sparse_encode
+from sklearn.decomposition import MiniBatchDictionaryLearning
 
 class BOW:
 	sift = cv2.SIFT()
@@ -62,4 +63,18 @@ class BOW:
 		labels = self.est.predict(des)
 		h, edge = np.histogram(labels,bins=np.array(range(self.codebook.shape[0]+1))-0.5,density=True)
 		return np.asarray([h])
+
+
+class BOW_spatialpyramid(BOW):
+	def codebook(self):
+		raw_feature = np.genfromtxt("raw_feature.csv", delimiter=',')
+		mdbl =  MiniBatchDictionaryLearning(self.N_codebook)
+		mbdl.fit(raw_feature)
+		self.dictionary = mbdl
+
+	def feature(self, path):
+		des = self.raw_feature_extract(path)
+		return sparse_encode(des, self.dictionary.components_)
+
+
 

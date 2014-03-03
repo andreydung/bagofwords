@@ -34,7 +34,7 @@ def getpaths(root):
 
 
 if __name__ =="__main__":
-	folder = '/media/sda5/Projects/Semantic/Database/Stanford/scene15_short'
+	folder = '/media/sda5/Projects/Semantic/Database/Stanford/Fulltest/scene15_large_test'
 	(paths, labels, categories) = getpaths(folder)
 
 	thefile = open('scene15_short.txt','w')

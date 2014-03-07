@@ -22,7 +22,7 @@ class BOW:
 		self.gridSpacing = 8
 
 		self.raw_features()
-		self.codebook(True)
+		self.codebook()
 
 	def raw_feature_extract(self, path):
 		im = cv2.imread(path)
@@ -30,6 +30,7 @@ class BOW:
 			raise Exception, "Invalid image path %s" %path
 
 		(M, N) = im.shape[:2]
+
 		# Grid sampling
 		pointlist=[]
 		for i in range(1,M, self.patchSize):
@@ -40,14 +41,10 @@ class BOW:
 		return des
 			
 	def raw_features(self):
-		self.inverse_index_image = []
 		raw_features = np.zeros((1,128))
 		for path in self.paths:
 			des = self.raw_feature_extract(path)
 			raw_features = np.append(raw_features, des, axis=0)
-
-			for i in range(des.shape[0]):
-				self.inverse_index_image.append(path)
 
 		raw_features = np.delete(raw_features, (0), axis=0)
 		self.raw_features = raw_features
@@ -56,8 +53,6 @@ class BOW:
 
 	def codebook(self, showcodebook = False):
 		print "Forming codebook through kmean clustering"
-		# raw_feature = np.genfromtxt("raw_feature.csv", delimiter=',')
-
 		est=KMeans(init='k-means++', n_clusters=self.N_codebook)
 		est.fit(self.raw_features)
 
@@ -65,29 +60,6 @@ class BOW:
 		self.codebook=est.cluster_centers_
 		print "Codebook shape: "+str(self.codebook.shape)
 		# np.savetxt("codebook_kmeans.csv", self.codebook, fmt='%.3f', delimiter=',')
-		
-		if showcodebook:
-			nbrs=NearestNeighbors(n_neighbors=1, algorithm='brute').fit(self.raw_features)
-
-			fileList=os.listdir("./patches")
-			for f in fileList:
-				os.remove("./patches/"+f)
-
-			patchsize=30
-
-			for i in range(codebook.shape[0]):
-				dis, ind = nbrs.kneighbors(codebook[i])
-				im = cv2.imread(self.inverse_index_image[ind])
-				M,N,P = im.shape
-				
-				(x,y)=position[ind].pt
-				a=x-patchsize if x>patchsize else 0
-				b=x+patchsize if x<M-patchsize else M
-				c=y-patchsize if y>patchsize else 0
-				d=y+patchsize if y<N-patchsize else N
-
-				cv2.imwrite("patches/p"+str(i)+".png",im[a:b, c:d,:])
-		
 	
 	def bow_feature_extract(self, path):
 		"""

@@ -4,8 +4,8 @@ import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import svm
 
-train = np.genfromtxt('../IPSILON/ipsilon_train.csv', delimiter = ',')
-test = np.genfromtxt('../IPSILON/ipsilon_test.csv', delimiter = ',')
+train = np.genfromtxt('../IPSILON/ipsilon_short_train.csv', delimiter = ',')
+test = np.genfromtxt('../IPSILON/ipsilon_short_test.csv', delimiter = ',')
 
 print train
 print test

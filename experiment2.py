@@ -3,6 +3,7 @@ import util
 from sklearn import cross_validation
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
 
 # train_folder = '/media/sda5/Projects/Semantic/Database/Stanford/scene15_short'
 train_folder = '/media/sda5/Projects/Semantic/Database/Stanford/Fulltest/scene15'
@@ -29,5 +30,9 @@ print prediction
 print testlabels
 
 print "Classfication accuracy: "
-print float(sum(prediction==testlabels))/len(prediction)
+accuracy =  float(sum(prediction==testlabels))/len(prediction)
 
+print accuracy
+
+np.savetxt('accuracy.txt', accuracy)
+np.savetxt('prediction.txt', prediction)
